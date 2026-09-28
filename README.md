@@ -6,13 +6,18 @@
 ## The corpus structure
 Corpus is presented in jsonl format. 
 ```json
-{"ckt": "нутэнут ныкоргавӄэн, нытаӈвыентоӄэн.", "ru": "земля радуется, дышит.", "score": 0.668190598487854, "source": "Charles_Weinstein", "article": null, "translation": null, "sent_id": null, "morphology": [{"form": "нутэнут", "analyses": ["нутэнут<n><sg><abs>"]}, {"form": "ныкоргавӄэн", "analyses": ["ныкоргавӄэн+?"]}, {"form": "нытаӈвыентоӄэн", "analyses": ["тэӈыԓгын<n><incorp>+выенток<v><iv><stat><hab><s_sg3>"]}]}
+{"ckt": "нутэнут ныкоргавӄэн, нытаӈвыентоӄэн.", # Chukchi sentence
+"ru": "земля радуется, дышит.", # Russian translation
+"score": 0.668190598487854, # technical field
+"source": "Charles_Weinstein", # the source of the sentence (for now Weinstein (2018) only, to be expand)
+"article": null, # technical field
+"translation": null, # technical field
+"sent_id": null, # technical field
+"morphology": [{"form": "нутэнут", "analyses": ["нутэнут<n><sg><abs>"]}, {"form": "ныкоргавӄэн", "analyses": ["ныкоргавӄэн+?"]}, {"form": "нытаӈвыентоӄэн", "analyses": ["тэӈыԓгын<n><incorp>+выенток<v><iv><stat><hab><s_sg3>"]}]} # wordforms and their analysises
 ```
-`score`, `article`, `sent_id` are technical fields inherited from HF dataset; 
-* `ckt` is Chukchi sentence
-* `ru` is Russian translation
-* `source` is the source of the sentence (for now Weinstein (2018) only, to be expand)
-* `morphology` is a list of distionaries: wordforms and their analysises
+
+Morphological analyses:
+
 ```json
 {"form": "нутэнут", "analyses": ["нутэнут<n><sg><abs>"]}, # pos-tag and grammatical tags
 {"form": "ныкоргавӄэн", "analyses": ["ныкоргавӄэн+?"]}, # undefined forms are marked with +?
