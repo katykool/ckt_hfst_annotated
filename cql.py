@@ -1,47 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-cql_search.py — упрощённый CQL-движок для корпуса вида:
-
-{"ckt": "...", "ru": "...", "score": ..., "source": "...", "article": null,
- "translation": null, "sent_id": null,
- "morphology": [{"form": "...", "analyses": ["лемма<tag><tag>+лемма2<tag>...", ...]}, ...]}
-
-СИНТАКСИС ЗАПРОСА 
-
-Один токен:
-    [attr="regex"]                  ограничение по одному атрибуту
-    [attr="regex" & attr2="regex2"] несколько условий на один токен (И)
-    [attr="regex" | attr2="regex2"] хотя бы одно из условий (ИЛИ)
-    [attr!="regex"]                 отрицание: НИ ОДНО значение атрибута не подходит под regex
-                                    (напр. [pos="v" & tag!="caus"] — глагол не в каузативе)
-
-Атрибуты:
-    word   — словоформа
-    lemma  — лемма ЛЮБОГО разбора этого токена (в т.ч. инкорпорированная основа)
-    pos    — часть речи (n, v, adv, part, pron, ...) — первый тег в разборе
-    tag    — ЛЮБОЙ грамматический тег разбора (sg, abs, stat, hab, s_sg3, incorp, caus...)
-
-Значение атрибута — регулярное выражение (fullmatch).
-Примеры значений: "каргок", "каргок.*", "n|v", ".*ӄэн"
-
-Токены идут подряд через пробел = слова должны идти подряд в предложении.
-
-Квантификаторы:
-    [pos="adv"]?        0 или 1
-    [pos="adv"]*        0 или больше
-    [pos="adv"]+        1 или больше
-    [pos="adv"]{2,3}    от 2 до 3
-    [pos="adv"]{2}      ровно 2
-
-Флаги:
+Флаги
   --limit N            показать только первые N совпадений
   --case-sensitive      учитывать регистр (по умолчанию не учитывается)
   --show-analyses       печатать морфологические разборы совпавших токенов
   --output FILE.xlsx    сохранить результаты в Excel вместо печати в консоль
   --output FILE.csv     сохранить результаты в CSV
 
-  python3 cql_search.py corpus.jsonl '[lemma="каргок"]' --output results.xlsx
+Пример
+  python cql_search.py corpus.jsonl '[lemma="каргок"]' --output results.xlsx
 """
 
 import argparse
@@ -51,7 +19,7 @@ import re
 import sys
 from typing import List, Optional, Tuple
 
-# 1. Загрузка корпуса 
+# Загрузка корпуса
 
 def load_corpus(path):
     with open(path, "r", encoding="utf-8") as f:
@@ -71,16 +39,12 @@ def load_corpus(path):
         i = end
     return records
 
-# 2. Разбор морфологии
+
+# Разбор морфологии
 
 _TOKEN_RE = re.compile(r"<[^<>]+>|[^<>]+")
 
-
 def parse_analysis(analysis: str) -> Optional[List[Tuple[str, List[str]]]]:
-    """
-    Возвращает list of (stem, [tags...]) для одной строки анализа,
-    либо None, если анализ отсутствует ("...+?") или пуст.
-    """
     if analysis.endswith("+?"):
         return None
 
@@ -101,7 +65,6 @@ def parse_analysis(analysis: str) -> Optional[List[Tuple[str, List[str]]]]:
 
 
 def build_token(word, analyses, case_sensitive):
-    """Строит индекс атрибутов для одной словоформы предложения."""
     norm_word = word if case_sensitive else word.lower()
     lemmas = set()
     poses = set()
@@ -133,12 +96,10 @@ def build_token(word, analyses, case_sensitive):
         "analyses": analyses or [],
     }
 
-
-# 3. Парсер запроса
+# Парсер запроса
 
 class QueryError(ValueError):
     pass
-
 
 _QTOK_RE = re.compile(r"""
     \s*(?:
@@ -168,7 +129,7 @@ def tokenize_query(q):
             continue
         m = _QTOK_RE.match(q, i)
         if not m or m.end() == i:
-            raise QueryError("Не могу разобрать запрос рядом с: %r" % q[i:i + 20])
+            raise QueryError("Parsing error at: %r" % q[i:i + 20])
         kind = m.lastgroup
         val = m.group(kind)
         toks.append((kind, val))
@@ -256,8 +217,8 @@ def parse_query(q):
         raise QueryError("Пустой запрос")
     return pattern
 
+# Матчинг запроса 
 
-# 4. Матчинг запроса 
 def compile_constraints(constraints, case_sensitive):
     flags = 0 if case_sensitive else re.IGNORECASE
     return [
@@ -267,7 +228,6 @@ def compile_constraints(constraints, case_sensitive):
 
 
 def _values(token, attr):
-    """Все значения атрибута у токена (по всем его разборам)."""
     if attr == "word":
         return (token["word_norm"],)
     if attr == "lemma":
@@ -278,16 +238,14 @@ def _values(token, attr):
 
 
 def _alt_matches(token, alt):
-    """Все условия одной альтернативы (И) выполняются."""
     for attr, rx, negate in alt:
         found = any(rx.fullmatch(v) for v in _values(token, attr))
-        if found == negate:      # для = нужно found, для != нужно not found
+        if found == negate:      
             return False
     return True
 
 
 def token_matches(token, compiled_constraints):
-    """Выполняется хотя бы одна альтернатива (ИЛИ)."""
     return any(_alt_matches(token, alt) for alt in compiled_constraints)
 
 
@@ -296,7 +254,6 @@ def compile_pattern(pattern, case_sensitive):
 
 
 def find_matches(tokens, compiled_pattern):
-    """Non-overlapping, самое длинное совпадение с каждой стартовой позиции (жадно)."""
     n = len(tokens)
     results = []
     start = 0
@@ -329,7 +286,8 @@ def find_matches(tokens, compiled_pattern):
     return results
 
 
-# 5. Основная программа
+# Основная программа
+
 
 def highlight(tokens, start, end):
     words = [t["word"] for t in tokens]
@@ -339,7 +297,6 @@ def highlight(tokens, start, end):
 
 
 def collect_hits(records, compiled_pattern, case_sensitive):
-    """Прогоняет запрос по всему корпусу, возвращает список найденных совпадений."""
     hits = []
     for rec_idx, rec in enumerate(records):
         morph = rec.get("morphology") or []
@@ -371,7 +328,6 @@ def collect_hits(records, compiled_pattern, case_sensitive):
 
 
 def _cell(value):
-    """Значение поля исходной записи -> значение ячейки таблицы."""
     if value is None:
         return ""
     if isinstance(value, (list, dict)):
@@ -380,18 +336,16 @@ def _cell(value):
 
 
 def build_table(hits):
-    """
-    Таблица как во входном корпусе (все поля записи, в порядке появления)
-    + последний столбец "match" с найденным сочетанием.
-    Одна строка = одно совпадение.
-    """
     keys = []
     for hit in hits:
         for k in hit["record"]:
             if k not in keys:
                 keys.append(k)
-    header = keys + ["match"]
-    rows = [[_cell(hit["record"].get(k)) for k in keys] + [hit["match"]] for hit in hits]
+    header = keys + ["match", "lemma"]
+    rows = [
+        [_cell(hit["record"].get(k)) for k in keys] + [hit["match"], hit["lemmas"]]
+        for hit in hits
+    ]
     return header, rows
 
 
@@ -416,7 +370,7 @@ def write_xlsx(hits, path):
         ws.append(row)
 
     for col_idx, name in enumerate(header, start=1):
-        width = 60 if name in ("ckt", "ru") else 30 if name == "match" else 18
+        width = 60 if name in ("ckt", "ru") else 30 if name in ("match", "lemma") else 18
         ws.column_dimensions[get_column_letter(col_idx)].width = width
     ws.freeze_panes = "A2"
     wb.save(path)
@@ -432,15 +386,15 @@ def write_csv(hits, path):
 
 def main():
     ap = argparse.ArgumentParser(
-        description="Упрощённый CQL-поиск по корпусу чукотских предложений.",
+        description="simplified CQL-search",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
     ap.add_argument("corpus", help="путь к файлу корпуса (JSON/JSONL)")
-    ap.add_argument("query", help='CQL-запрос, например \'[lemma="каргок"]\'')
+    ap.add_argument("query", help='CQL-запрос, например \'[lemma="пыкирык"]\'')
     ap.add_argument("--limit", type=int, default=None, help="показать/сохранить не больше N совпадений")
     ap.add_argument("--case-sensitive", action="store_true", help="учитывать регистр")
-    ap.add_argument("--show-analyses", action="store_true", help="печатать разборы совпавших токенов (только консоль)")
+    ap.add_argument("--show-analyses", action="store_true", help="печатать разборы совпавших токенов в консоль")
     ap.add_argument("--output", "-o", metavar="FILE", default=None,
                      help="сохранить результаты в файл вместо печати в консоль (.xlsx или .csv)")
     args = ap.parse_args()
@@ -472,7 +426,7 @@ def main():
         elif args.output.lower().endswith(".csv"):
             write_csv(shown_hits, args.output)
         else:
-            print("Неподдерживаемое расширение файла (нужен .xlsx или .csv): %s" % args.output,
+            print("Неподдерживаемое расширение файла (выберите .xlsx или .csv): %s" % args.output,
                   file=sys.stderr)
             sys.exit(1)
         print("Сохранено %d из %d совпадений в %s" % (len(shown_hits), total_hits, args.output))
