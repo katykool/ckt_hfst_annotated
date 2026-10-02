@@ -23,7 +23,7 @@ The corpus is in JSONL format.
  ]}
 ```
 
-Morphological analyses [tagset here](tagset.txt):
+Morphological analyses ([tagset here](tagset.txt)):
 
 ```jsonc
 {"form": "нутэнут", "analyses": ["нутэнут<n><sg><abs>"]},       // stem, part-of-speech tag, grammatical tags
