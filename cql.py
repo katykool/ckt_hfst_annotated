@@ -9,7 +9,7 @@
   --output FILE.csv     сохранить результаты в CSV
 
 Пример
-  python cql_search.py corpus.jsonl '[lemma="каргок"]' --output results.xlsx
+  python cql_search.py corpus.jsonl '[lemma="пыкирык"]' --output results.xlsx
 """
 
 import argparse
