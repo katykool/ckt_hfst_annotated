@@ -1,12 +1,12 @@
 # Morphologically annotated Chukchi texts
 
-* Parallel Chukchi-Russian sentences are collected from the dictionary by Charles Weinstein by the [HSE-Chukchi-NLP](https://huggingface.co/datasets/HSE-Chukchi-NLP/russian-chukchi-parallel-corpora) project.
-  * The set of sentence examples differs from (Weinstein, 2018): there are additional sentences not included in the dataset.
+* Parallel Chukchi-Russian sentences are collected from the (online) dictionary by Charles Weinstein by the [HSE-Chukchi-NLP](https://huggingface.co/datasets/HSE-Chukchi-NLP/russian-chukchi-parallel-corpora) project.
+  * The set of sentence examples differs from (Weinstein, 2018): there are sentences not included in the dataset.
 * The morphological parser (HFST-based) is built by Vasilisa Andriyanets and Francis Tyers: [GitHub](https://github.com/BasilisAndr/chkchn), [ACL](https://aclanthology.org/W18-4804/).
 
 ## The corpus structure
 
-The corpus is in JSONL format (one JSON object per line). One record, with comments added for explanation (real files contain no comments):
+The corpus is in JSONL format. 
 
 ```jsonc
 {"ckt": "нутэнут ныкоргавӄэн, нытаӈвыентоӄэн.",   // Chukchi sentence
@@ -23,7 +23,7 @@ The corpus is in JSONL format (one JSON object per line). One record, with comme
  ]}
 ```
 
-Morphological analyses:
+Morphological analyses [tagset here](tagset.txt):
 
 ```jsonc
 {"form": "нутэнут", "analyses": ["нутэнут<n><sg><abs>"]},       // stem, part-of-speech tag, grammatical tags
@@ -36,12 +36,12 @@ A form can have several analyses if it is ambiguous.
 
 ## CQL corpus search
 
-[`cql.py`](cql.py) searches the annotated JSONL corpus by word, lemma, part of speech and grammatical tags, using a lightweight subset of CQL (Corpus Query Language). Python 3 is required; `pip install openpyxl` is needed for `.xlsx` output.
+[`cql.py`](cql.py) searches the annotated JSONL corpus by word, lemma, part of speech and grammatical tags, using a sinplified CQL (Corpus Query Language). Python 3 is required; `pip install openpyxl` is needed for `.xlsx` output.
 
 ```bash
-python cql.py \
-    corpora/charles-weinstein-morphology.jsonl \
-    '[lemma="пыкирык" & tag!="caus"]' \
+python cql.py 
+    corpora/charles-weinstein-morphology.jsonl 
+    '[lemma="пыкирык" & tag!="caus"]' 
     --output results.xlsx
 ```
 
@@ -54,22 +54,21 @@ Options:
 
 ### Query syntax
 
-A token is a condition in square brackets: `[attribute="regex"]`.
+Query consists of elements in square brackets: `[attribute="regex"]`.
 
 | attribute | matched against |
 |-----------|-----------------|
-| `word`  | the surface form |
-| `lemma` | the stem of any analysis of the token, including incorporated stems (both `тэӈыԓгын` and `выенток` in the example above) |
+| `word`  | the wordform |
+| `lemma` | the lemma of any analysis of the token, including incorporated stems (both `тэӈыԓгын` and `выенток` in the example above) |
 | `pos`   | the first tag after each stem (`n`, `v`, `adv`, `part`, ...) |
 | `tag`   | any tag of any analysis (`sg`, `abs`, `stat`, `hab`, `s_sg3`, `incorp`, `caus`, ...) |
 
-Values are regular expressions matched against the **complete** attribute value. Adjacent query tokens must be adjacent in the sentence. Quantifiers `?`, `*`, `+`, `{n,m}` are supported.
+Adjacent query tokens are adjacent in the sentence. Quantifiers `?`, `*`, `+`, `{n,m}` are supported.
 
 ```text
-[lemma="каргок"]                  any form of the lemma
-[word="вагъэ"]                    exact surface form
-"вагъэ"                           shorthand for [word="вагъэ"]
-[pos="v" & tag="hab"]             AND: a habitual verb
+[lemma="пыкирык"]                 any form of the lemma
+[word="пыкиргъэ"]                 exact surface form
+[pos="v" & tag="hab"]             a habitual verb
 [lemma="рэк" | word="эймэквъи"]   OR between conditions
 [pos="v" & tag!="caus"]           NOT: no analysis of the token has the tag caus
 [lemma="рэк"][word=".*чык[оу]"]   two adjacent tokens
@@ -92,9 +91,9 @@ Exported tables contain all fields of the corpus (`morphology` as a JSON string)
 
 ## Google Colab notebook
 
-[`corpus_search_colab.ipynb`](corpus_search_colab.ipynb) is a standalone Colab workflow for searching the annotated corpus. It downloads [`cql.py`](cql.py) and `charles-weinstein-morphology.jsonl` from GitHub, so no installation is required.
+[`corpus_search_colab.ipynb`](corpus_search_colab.ipynb) is a Colab notebook for searching the annotated corpus. It downloads [`cql.py`](cql.py) and `charles-weinstein-morphology.jsonl` from GitHub, so no installation is required.
 
-Open the notebook in Google Colab and run the cells from top to bottom. Edit `QUERY`, run the query cell, and use `save(hits, "results.xlsx")` to download the result table (`.csv` is supported too).
+Open the notebook in Google Colab, edit `QUERY`, run the cells, and use `save(hits, "results.xlsx")` to download the result table (`.csv` is supported too).
 
 The notebook's example searches several verb lemmas and a word form, excluding causative analyses:
 
