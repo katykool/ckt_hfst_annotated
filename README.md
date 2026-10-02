@@ -1,7 +1,10 @@
 # Morphologically annotated Chukchi texts
 
-* Parallel Chukchi-Russian sentences are collected from the (online) dictionary by Charles Weinstein by the [HSE-Chukchi-NLP](https://huggingface.co/datasets/HSE-Chukchi-NLP/russian-chukchi-parallel-corpora) project.
-  * The set of sentence examples differs from (Weinstein, 2018): there are sentences not included in the dataset.
+* Parallel Chukchi-Russian sentences are collected  by the [HSE-Chukchi-NLP](https://huggingface.co/datasets/HSE-Chukchi-NLP/russian-chukchi-parallel-corpora) project
+  * online dictionary by Charles Weinstein
+    * The set of sentence examples differs from (Weinstein, 2018): there are sentences not included in the dataset.
+  * articles from "Krayniy Sever" (Murɣin nutenut)
+ 
 * The morphological parser (HFST-based) is built by Vasilisa Andriyanets and Francis Tyers: [GitHub](https://github.com/BasilisAndr/chkchn), [ACL](https://aclanthology.org/W18-4804/).
 
 ## The corpus structure
